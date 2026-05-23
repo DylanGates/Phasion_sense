@@ -33,7 +33,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/catalog" className="hover:text-muted-foreground transition-colors">Shop</Link>
             <Link href="/catalog?filter=new" className="hover:text-muted-foreground transition-colors">New Arrivals</Link>
             <Link href="/catalog?filter=sales" className="hover:text-muted-foreground transition-colors">Sales</Link>
-            <Link href="/journal" className="hover:text-muted-foreground transition-colors">Journal</Link>
           </nav>
 
           {/* Logo */}
@@ -73,7 +72,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/catalog" onClick={() => setIsMenuOpen(false)}>Shop</Link>
             <Link href="/catalog?filter=new" onClick={() => setIsMenuOpen(false)}>New Arrivals</Link>
             <Link href="/catalog?filter=sales" onClick={() => setIsMenuOpen(false)}>Sales</Link>
-            <Link href="/journal" onClick={() => setIsMenuOpen(false)}>Journal</Link>
           </div>
         )}
       </header>
