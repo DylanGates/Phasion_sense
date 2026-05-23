@@ -81,6 +81,8 @@ Phasion_sense/
 
 The backend is a Fastify service in `backend/`. It proxies the hackathon API, normalizes frontend-facing payloads, applies the Phasion Sense fallback WhatsApp number, and generates checkout deep links.
 
+For Vercel, the Fastify app is served through Next route handlers in `frontend/src/app/api/[...path]/route.ts`, so the frontend and backend deploy together on one Vercel project.
+
 Backend routes:
 
 - `GET /health`
@@ -138,6 +140,26 @@ The backend runs at `http://localhost:4000`.
 ```bash
 pnpm build
 pnpm start
+```
+
+## Vercel Deployment
+
+Deploy this repository as a single Vercel project from the monorepo root:
+
+- Framework preset: `Next.js`
+- Install command: `pnpm install`
+- Build command: `pnpm build`
+- Output directory: `frontend/.next`
+
+These settings are also captured in [vercel.json](./vercel.json).
+
+Set these environment variables in Vercel:
+
+```bash
+HACKATHON_API_BASE=https://api-hackathon.codedematrixtech.com
+MERCHANT_SLUG=phasion-sense
+TEAM_SLUG=phasion-sense
+FALLBACK_WHATSAPP=+233595352458
 ```
 
 Backend checks:

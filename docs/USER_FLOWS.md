@@ -501,4 +501,4 @@ Returns: { url: "https://..." }
 └── /checkout             — basket review + WhatsApp handoff
 ```
 
-All routes are reachable from the top navigation. The basket drawer is global (rendered in app shell) and accessible from every page.
+All routes are reachable from the to`p navigation. The basket drawer is global (rendered in app shell) and accessible from every page.

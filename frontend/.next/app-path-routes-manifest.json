@@ -1,13 +1,19 @@
 {
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
+  "/campaigns/[id]/page": "/campaigns/[id]",
+  "/campaigns/page": "/campaigns",
+  "/catalog/page": "/catalog",
+  "/checkout/page": "/checkout",
   "/clients/[id]/page": "/clients/[id]",
   "/clients/page": "/clients",
+  "/dashboard/page": "/dashboard",
   "/icon.png/route": "/icon.png",
   "/inbox/page": "/inbox",
   "/page": "/",
   "/performance/page": "/performance",
   "/projects/[id]/backlog/page": "/projects/[id]/backlog",
   "/projects/[id]/page": "/projects/[id]",
+  "/studio/page": "/studio",
   "/tasks/page": "/tasks"
 }

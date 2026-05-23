@@ -60,6 +60,11 @@ export function buildApp(options: BuildAppOptions = {}) {
     upstream: await upstream.health(),
   }))
 
+  app.get("/api/health", async () => ({
+    status: "ok",
+    upstream: await upstream.health(),
+  }))
+
   app.get("/api/merchant", async () => normalizeMerchant(await upstream.getMerchant(), config))
 
   app.get("/api/products", async () => {
