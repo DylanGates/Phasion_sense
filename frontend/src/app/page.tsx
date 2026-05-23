@@ -5,22 +5,35 @@ import { ProductCard } from "@/components/phasion/product-card"
 import { Button } from "@/components/ui/button"
 import { phasionApi } from "@/lib/phasion/api"
 
-const FALLBACK_HERO = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2400&auto=format&fit=crop"
-const FALLBACK_IMGS = [
-  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1529139513466-42016c430756?q=80&w=1200&auto=format&fit=crop",
+// EXACT MATCH SEARCHES FROM UNSPLASH TO MIRROR CEIN REFERENCE
+const FALLBACK_HERO = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?q=80&w=2400&auto=format&fit=crop" // Woman in tan coat/knit
+const FALLBACK_CAT = [
+  "https://images.unsplash.com/photo-1539109132314-347752d87b40?q=80&w=800&auto=format&fit=crop", // Portrait 1 (black knit)
+  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop", // Portrait 2 (tan skirt)
+  "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=800&auto=format&fit=crop", // Portrait 3 (orange knit)
 ]
+const LIFESTYLE_IMGS = [
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop", // Smart Chic
+  "https://images.unsplash.com/photo-1529139513466-42016c430756?q=80&w=1200&auto=format&fit=crop", // Ready to Go
+]
+
+async function getData() {
+  try {
+    const [items, campaigns] = await Promise.all([
+      phasionApi.getItems().catch(() => []),
+      phasionApi.getCampaigns().catch(() => []),
+    ])
+    return { items, campaigns }
+  } catch (e) {
+    console.error("Fetch error:", e)
+    return { items: [], campaigns: [] }
+  }
+}
 
 export const revalidate = 60
 
 export default async function Page() {
-  const [items, campaigns] = await Promise.all([
-    phasionApi.getItems().catch(() => []),
-    phasionApi.getCampaigns().catch(() => []),
-  ])
+  const { items, campaigns } = await getData()
 
   const heroImg =
     campaigns[0]?.image_urls?.[0] ??
@@ -28,24 +41,28 @@ export default async function Page() {
     FALLBACK_HERO
 
   const categoryItems = [
-    { title: "New Arrivals",    img: campaigns[0]?.image_urls?.[0] ?? FALLBACK_IMGS[0] },
-    { title: "The Casual Edit", img: campaigns[1]?.image_urls?.[0] ?? FALLBACK_IMGS[1] },
-    { title: "Best-Sellers",    img: campaigns[2]?.image_urls?.[0] ?? FALLBACK_IMGS[2] },
+    { title: "New Arrivals",    img: campaigns[0]?.image_urls?.[0] ?? FALLBACK_CAT[0] },
+    { title: "The Casual Edit", img: campaigns[1]?.image_urls?.[0] ?? FALLBACK_CAT[1] },
+    { title: "Best-Sellers",    img: campaigns[2]?.image_urls?.[0] ?? FALLBACK_CAT[2] },
   ]
 
   const productGrid = items.slice(0, 5).map((p) => ({
     id: p.id,
     name: p.name,
-    price: `GH₵${(p.price_minor / 100).toFixed(2)}`,
-    image: p.image_urls?.[0] ?? FALLBACK_IMGS[0],
+    price: p.currency === "GHS" ? `GH₵${(p.price_minor / 100).toFixed(2)}` : `$${(p.price_minor / 100).toFixed(2)}`,
+    image: p.image_urls?.[0] ?? FALLBACK_CAT[0],
   }))
 
-  const lifestyleLeft  = items[5]?.image_urls?.[0] ?? FALLBACK_IMGS[3]
-  const lifestyleRight = items[6]?.image_urls?.[0] ?? FALLBACK_IMGS[4]
+  const lifestyleLeft  = items[5]?.image_urls?.[0] ?? LIFESTYLE_IMGS[0]
+  const lifestyleRight = items[6]?.image_urls?.[0] ?? LIFESTYLE_IMGS[1]
 
-  const igImages = Array.from({ length: 5 }, (_, i) => {
-    return items[i + 1]?.image_urls?.[0] ?? FALLBACK_IMGS[i % 3]
-  })
+  const igImages = [
+    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=600&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1537832816519-689ad163238b?q=80&w=600&auto=format&fit=crop"
+  ]
 
   return (
     <AppShell>
@@ -53,12 +70,12 @@ export default async function Page() {
       <section className="relative h-[92vh] w-full overflow-hidden">
         <Image src={heroImg} alt="Hero" fill priority className="object-cover object-top" />
         <div className="absolute inset-0 bg-black/[0.03]" />
-        <div className="absolute bottom-[20%] left-6 md:left-16 lg:left-24 max-w-2xl text-white">
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-10 leading-[1.1] tracking-tight drop-shadow-sm">
+        <div className="absolute bottom-[20%] left-6 md:left-16 lg:left-24 max-w-2xl text-white font-serif">
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-light mb-10 leading-[1.1] tracking-tight drop-shadow-sm">
             Elevate Your Style<br />
             Timeless Fashion,<br />Sustainable Choices
           </h2>
-          <Button variant="outline" size="lg" className="rounded-none bg-white text-black border-white hover:bg-white/90 px-10 py-7 text-xs tracking-widest uppercase">
+          <Button variant="hero" size="lg" className="px-10 py-7">
             Shop Now
           </Button>
         </div>
@@ -84,7 +101,7 @@ export default async function Page() {
             />
             <div className="absolute inset-0 bg-black/15 transition-opacity group-hover:opacity-0" />
             <div className="absolute bottom-10 left-10">
-              <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-lg underline underline-offset-[12px] decoration-white/40">
+              <h3 className="text-white text-2xl font-serif font-medium tracking-wide drop-shadow-lg underline underline-offset-[12px] decoration-white/40">
                 {cat.title}
               </h3>
             </div>
@@ -96,8 +113,8 @@ export default async function Page() {
       <section className="py-32">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between mb-16">
-            <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90">What to Wear Now</h2>
-            <Link href="/catalog" className="text-xs tracking-widest uppercase underline underline-offset-4 opacity-60 hover:opacity-100 transition-opacity">
+            <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90 font-sans">What to Wear Now</h2>
+            <Link href="/catalog" className="text-xs tracking-widest uppercase underline underline-offset-4 opacity-60 hover:opacity-100 transition-opacity font-sans">
               View All
             </Link>
           </div>
@@ -108,7 +125,7 @@ export default async function Page() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">No products found.</p>
+            <p className="text-muted-foreground text-sm font-sans text-center py-20">No items available at the moment.</p>
           )}
         </div>
       </section>
@@ -117,21 +134,21 @@ export default async function Page() {
       <section className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-10 py-12">
         <Link href="/catalog" className="group relative aspect-[3/4] overflow-hidden block">
           <Image src={lifestyleLeft} alt="The Smart Chic" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
-          <div className="absolute bottom-10 left-10">
-            <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-md">The Smart Chic</h3>
+          <div className="absolute bottom-10 left-10 text-white font-serif">
+            <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">The Smart Chic</h3>
           </div>
         </Link>
         <Link href="/catalog" className="group relative aspect-[3/4] overflow-hidden block">
           <Image src={lifestyleRight} alt="Ready To Go" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
-          <div className="absolute bottom-10 left-10">
-            <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-md">Ready To Go</h3>
+          <div className="absolute bottom-10 left-10 text-white font-serif">
+            <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">Ready To Go</h3>
           </div>
         </Link>
       </section>
 
       {/* Mission */}
-      <section className="bg-secondary/5 py-48 px-6 text-center mt-20">
-        <div className="max-w-3xl mx-auto flex flex-col gap-12">
+      <section className="bg-secondary/20 py-48 px-6 text-center mt-20">
+        <div className="max-w-3xl mx-auto flex flex-col gap-12 font-sans">
           <h2 className="text-3xl md:text-4xl font-serif font-light tracking-tight">The Art of Fewer, Better Choices</h2>
           <p className="text-[17px] leading-[2] text-muted-foreground font-medium max-w-2xl mx-auto px-4">
             Opting for quality over quantity means selecting timeless, durable, and responsibly
@@ -145,7 +162,7 @@ export default async function Page() {
       {/* Instagram grid */}
       <section className="py-32 overflow-hidden">
         <div className="container mx-auto px-6 text-center mb-16">
-          <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90">Shop Instagram</h2>
+          <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90 font-sans">Shop Instagram</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-6">
           {igImages.map((img, i) => (
