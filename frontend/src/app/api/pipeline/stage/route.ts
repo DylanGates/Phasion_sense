@@ -18,6 +18,10 @@ export async function POST(request: Request) {
     }
     const { photoroomApiKey, apiBase } = getServerConfig()
 
+    if (!photoroomApiKey) {
+      return Response.json({ error: "PHOTOROOM_API_KEY is not set in environment variables" }, { status: 500 })
+    }
+
     const rehostFn = async (buf: Buffer, filename: string): Promise<string> => {
       const form = new FormData()
       form.append("file", new Blob([new Uint8Array(buf)], { type: "image/png" }), filename)
