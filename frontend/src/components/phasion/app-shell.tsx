@@ -38,12 +38,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
-            <div className="relative h-12 w-40">
+            <div className="relative h-14 w-44">
               <Image 
                 src="/logo.png" 
                 alt="Phasion Sense" 
                 fill
-                className="object-contain grayscale brightness-0 opacity-90 invert dark:invert-0"
+                className="object-contain"
                 priority
               />
             </div>

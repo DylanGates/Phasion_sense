@@ -50,9 +50,9 @@ export default function Page() {
           priority
           className="object-cover object-top"
         />
-        <div className="absolute inset-0 bg-black/[0.03]" />
-        <div className="absolute bottom-[20%] left-6 md:left-16 lg:left-24 max-w-2xl text-white">
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-10 leading-[1.1] tracking-tight drop-shadow-sm">
+        <div className="absolute inset-0 bg-black/[0.02]" />
+        <div className="absolute bottom-[20%] left-6 md:left-16 lg:left-24 max-w-2xl text-white font-serif">
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-light mb-10 leading-[1.1] tracking-tight drop-shadow-sm">
             Elevate Your Style<br />
             Timeless Fashion,<br />Sustainable Choices
           </h2>
@@ -86,7 +86,7 @@ export default function Page() {
             />
             <div className="absolute inset-0 bg-black/10 transition-opacity group-hover:opacity-20" />
             <div className="absolute bottom-10 left-10">
-              <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-lg underline underline-offset-[12px] decoration-white/40">{cat.title}</h3>
+              <h3 className="text-white text-2xl font-serif font-medium tracking-wide drop-shadow-lg underline underline-offset-[12px] decoration-white/40">{cat.title}</h3>
             </div>
           </div>
         ))}
@@ -115,8 +115,8 @@ export default function Page() {
             fill
             className="object-cover transition-transform duration-1000 group-hover:scale-105"
           />
-          <div className="absolute bottom-10 left-10">
-            <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-md">The Smart Chic</h3>
+          <div className="absolute bottom-10 left-10 text-white font-serif">
+            <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">The Smart Chic</h3>
           </div>
         </div>
         <div className="group relative aspect-[3/4] overflow-hidden cursor-pointer">
@@ -126,14 +126,14 @@ export default function Page() {
             fill
             className="object-cover transition-transform duration-1000 group-hover:scale-105"
           />
-          <div className="absolute bottom-10 left-10">
-            <h3 className="text-white text-2xl font-medium tracking-wide drop-shadow-md">Ready To Go</h3>
+          <div className="absolute bottom-10 left-10 text-white font-serif">
+            <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">Ready To Go</h3>
           </div>
         </div>
       </section>
 
       {/* Mission Section */}
-      <section className="bg-secondary/5 py-48 px-6 text-center mt-20">
+      <section className="bg-secondary/20 py-48 px-6 text-center mt-20">
         <div className="max-w-3xl mx-auto flex flex-col gap-12">
           <h2 className="text-3xl md:text-4xl font-serif font-light tracking-tight">The Art of Fewer, Better Choices</h2>
           <p className="text-[17px] leading-[2] text-muted-foreground font-medium max-w-2xl mx-auto px-4">
@@ -148,7 +148,7 @@ export default function Page() {
       {/* Instagram Grid */}
       <section className="py-32 overflow-hidden">
         <div className="container mx-auto px-6 text-center mb-16">
-          <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90">Shop Instagram</h2>
+          <h2 className="text-xl font-bold tracking-[0.05em] uppercase opacity-90 font-sans">Shop Instagram</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-6">
           {[

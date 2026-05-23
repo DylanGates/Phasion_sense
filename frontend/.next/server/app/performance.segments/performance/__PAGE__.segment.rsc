@@ -1,9 +1,0 @@
-1:"$Sreact.fragment"
-2:I[17961,["/_next/static/chunks/fcb7a610c418796c.js","/_next/static/chunks/50a36c6d5447d923.js","/_next/static/chunks/91f3417991eedc8c.js","/_next/static/chunks/8122d718f278e89e.js","/_next/static/chunks/1e01becf97aff7ec.js"],"SidebarProvider"]
-3:I[15412,["/_next/static/chunks/fcb7a610c418796c.js","/_next/static/chunks/50a36c6d5447d923.js","/_next/static/chunks/91f3417991eedc8c.js","/_next/static/chunks/8122d718f278e89e.js","/_next/static/chunks/1e01becf97aff7ec.js"],"AppSidebar"]
-4:I[17961,["/_next/static/chunks/fcb7a610c418796c.js","/_next/static/chunks/50a36c6d5447d923.js","/_next/static/chunks/91f3417991eedc8c.js","/_next/static/chunks/8122d718f278e89e.js","/_next/static/chunks/1e01becf97aff7ec.js"],"SidebarInset"]
-5:"$Sreact.suspense"
-6:I[16764,["/_next/static/chunks/fcb7a610c418796c.js","/_next/static/chunks/50a36c6d5447d923.js","/_next/static/chunks/91f3417991eedc8c.js","/_next/static/chunks/8122d718f278e89e.js","/_next/static/chunks/1e01becf97aff7ec.js"],"PerformanceContent"]
-7:I[89836,["/_next/static/chunks/3337476739009024.js","/_next/static/chunks/796e7f5bb07ad38d.js"],"OutletBoundary"]
-0:{"buildId":"_GTiloymbp91S9p1UMi5g","rsc":["$","$1","c",{"children":[["$","$L2",null,{"children":[["$","$L3",null,{}],["$","$L4",null,{"children":["$","$5",null,{"fallback":null,"children":["$","$L6",null,{}]}]}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/50a36c6d5447d923.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/91f3417991eedc8c.js","async":true}],["$","script","script-2",{"src":"/_next/static/chunks/8122d718f278e89e.js","async":true}],["$","script","script-3",{"src":"/_next/static/chunks/1e01becf97aff7ec.js","async":true}]],["$","$L7",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"loading":null,"isPartial":false}
-8:null
