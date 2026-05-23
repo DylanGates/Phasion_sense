@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, DragEvent } from "react"
 import Image from "next/image"
-import { Loader2, Wand2, ImageOff, Send, CheckCircle2, ChevronRight } from "lucide-react"
+import { Loader2, Wand2, ImageOff, Send, CheckCircle2, ChevronRight, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,14 +13,18 @@ type Product = { id: string; name: string; price: string; image: string }
 
 type Step = "select" | "stage" | "generate" | "done"
 
+const API_BASE = "https://api-hackathon.codedematrixtech.com"
 const TEAM_SLUG = "phasion-sense"
 const MERCHANT_ID = "phasion-sense"
 
 export function CampaignStudio({ products }: { products: Product[] }) {
   const [step, setStep] = useState<Step>("select")
 
-  // Step 1 — product selection
+  // Step 1 — product selection + upload
   const [selected, setSelected] = useState<Product | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Step 2 — Photoroom staging
   const [staging, setStaging] = useState(false)
@@ -34,11 +38,53 @@ export function CampaignStudio({ products }: { products: Product[] }) {
   const [publishing, setPublishing] = useState(false)
   const [publishedId, setPublishedId] = useState<string | null>(null)
 
+  // ── Upload image to hackathon API ─────────────────────────────────────────
+  async function uploadFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file")
+      return
+    }
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetch(`${API_BASE}/uploads`, { method: "POST", body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message ?? "Upload failed")
+      const url = data.url.startsWith("http") ? data.url : `${API_BASE}${data.url}`
+      const uploaded: Product = {
+        id: `upload-${Date.now()}`,
+        name: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
+        price: "",
+        image: url,
+      }
+      pickProduct(uploaded)
+      toast.success("Image uploaded!")
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) uploadFile(file)
+    e.target.value = ""
+  }
+
+  function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) uploadFile(file)
+  }
+
   // ── Step 1: pick a product ────────────────────────────────────────────────
   function pickProduct(p: Product) {
     setSelected(p)
-    setTitle(p.name)
-    setCopy(`Shop the ${p.name} — a signature piece from Phasion Sense, crafted for the modern wardrobe.`)
+    setTitle(p.name || "My Campaign")
+    setCopy(p.name ? `Shop the ${p.name} — a signature piece from Phasion Sense, crafted for the modern wardrobe.` : "A curated piece from Phasion Sense.")
     setStagedUrl(null)
     setGeneratedCard(null)
     setPublishedId(null)
@@ -158,33 +204,66 @@ export function CampaignStudio({ products }: { products: Product[] }) {
 
       {/* ── Step 1: Product grid ── */}
       {step === "select" && (
-        <div>
-          <h2 className="text-lg font-bold uppercase tracking-widest mb-8 opacity-70">Choose a Product</h2>
-          {products.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No products loaded. Check your API connection.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => pickProduct(p)}
-                  className="group text-left hover:opacity-90 transition-opacity"
-                >
-                  <div className="aspect-[3/4] relative overflow-hidden bg-secondary/30 mb-3 border border-border/50 group-hover:border-foreground/30 transition-colors">
-                    {p.image ? (
-                      <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <ImageOff className="w-6 h-6 text-muted-foreground/30" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs font-bold truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.price}</p>
-                </button>
-              ))}
+        <div className="space-y-10">
+          {/* Upload dropzone */}
+          <div>
+            <h2 className="text-lg font-bold uppercase tracking-widest mb-6 opacity-70">Upload Your Own Image</h2>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-none cursor-pointer transition-colors flex flex-col items-center justify-center gap-3 py-14 px-8 text-center select-none
+                ${dragOver ? "border-foreground bg-foreground/5" : "border-border hover:border-foreground/40 hover:bg-secondary/10"}`}
+            >
+              {uploading ? (
+                <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
+              ) : (
+                <Upload className="w-7 h-7 text-muted-foreground" />
+              )}
+              <div>
+                <p className="text-sm font-medium">{uploading ? "Uploading…" : "Drag & drop or click to upload"}</p>
+                <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP — any product photo</p>
+              </div>
             </div>
-          )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFileChange}
+            />
+          </div>
+
+          {/* Catalog grid */}
+          <div>
+            <h2 className="text-lg font-bold uppercase tracking-widest mb-6 opacity-70">Or Choose from Catalog</h2>
+            {products.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No products loaded. Check your API connection.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {products.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => pickProduct(p)}
+                    className="group text-left hover:opacity-90 transition-opacity"
+                  >
+                    <div className="aspect-[3/4] relative overflow-hidden bg-secondary/30 mb-3 border border-border/50 group-hover:border-foreground/30 transition-colors">
+                      {p.image ? (
+                        <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <ImageOff className="w-6 h-6 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.price}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
