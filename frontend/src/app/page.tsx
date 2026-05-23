@@ -3,67 +3,32 @@ import Link from "next/link"
 import { AppShell } from "@/components/phasion/app-shell"
 import { ProductCard } from "@/components/phasion/product-card"
 import { Button } from "@/components/ui/button"
-import { phasionApi } from "@/lib/phasion/api"
 
-// EXACT MATCH SEARCHES FROM UNSPLASH TO MIRROR CEIN REFERENCE
-const FALLBACK_HERO = "https://images.unsplash.com/photo-1603400521630-9f2de124b33b?q=80&w=2400&auto=format&fit=crop" // Woman in tan coat/knit
-const FALLBACK_CAT = [
-  "https://images.unsplash.com/photo-1539109132314-347752d87b40?q=80&w=800&auto=format&fit=crop", // Portrait 1 (black knit)
-  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop", // Portrait 2 (tan skirt)
-  "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=800&auto=format&fit=crop", // Portrait 3 (orange knit)
-]
-const LIFESTYLE_IMGS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop", // Smart Chic
-  "https://images.unsplash.com/photo-1529139513466-42016c430756?q=80&w=1200&auto=format&fit=crop", // Ready to Go
+const heroImg = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2400&auto=format&fit=crop"
+
+const categoryItems = [
+  { title: "New Arrivals",    img: "https://images.unsplash.com/photo-1539109132314-347752d87b40?q=80&w=800&auto=format&fit=crop" },
+  { title: "The Casual Edit", img: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop" },
+  { title: "Best-Sellers",    img: "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=800&auto=format&fit=crop" },
 ]
 
-async function getData() {
-  try {
-    const [items, campaigns] = await Promise.all([
-      phasionApi.getItems().catch(() => []),
-      phasionApi.getCampaigns().catch(() => []),
-    ])
-    return { items, campaigns }
-  } catch (e) {
-    console.error("Fetch error:", e)
-    return { items: [], campaigns: [] }
-  }
-}
+const productGrid = [
+  { id: "1", name: "Linen Oversized Blazer", price: "GH₵520.00", image: "https://images.unsplash.com/photo-1594938298603-c8148c4b5491?q=80&w=800&auto=format&fit=crop" },
+  { id: "2", name: "Ribbed Knit Midi Dress", price: "GH₵380.00", image: "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?q=80&w=800&auto=format&fit=crop" },
+  { id: "3", name: "Wide-Leg Trousers",      price: "GH₵290.00", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop" },
+  { id: "4", name: "Silk Slip Cami Top",     price: "GH₵180.00", image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800&auto=format&fit=crop" },
+  { id: "5", name: "Structured Tote Bag",    price: "GH₵420.00", image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop" },
+]
 
-export const revalidate = 60
+const igImages = [
+  "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1537832816519-689ad163238b?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1529139513466-42016c430756?q=80&w=600&auto=format&fit=crop",
+]
 
-export default async function Page() {
-  const { items, campaigns } = await getData()
-
-  const heroImg =
-    campaigns[0]?.image_urls?.[0] ??
-    items[0]?.image_urls?.[0] ??
-    FALLBACK_HERO
-
-  const categoryItems = [
-    { title: "New Arrivals",    img: campaigns[0]?.image_urls?.[0] ?? FALLBACK_CAT[0] },
-    { title: "The Casual Edit", img: campaigns[1]?.image_urls?.[0] ?? FALLBACK_CAT[1] },
-    { title: "Best-Sellers",    img: campaigns[2]?.image_urls?.[0] ?? FALLBACK_CAT[2] },
-  ]
-
-  const productGrid = items.slice(0, 5).map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.currency === "GHS" ? `GH₵${(p.price_minor / 100).toFixed(2)}` : `$${(p.price_minor / 100).toFixed(2)}`,
-    image: p.image_urls?.[0] ?? FALLBACK_CAT[0],
-  }))
-
-  const lifestyleLeft  = items[5]?.image_urls?.[0] ?? LIFESTYLE_IMGS[0]
-  const lifestyleRight = items[6]?.image_urls?.[0] ?? LIFESTYLE_IMGS[1]
-
-  const igImages = [
-    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1537832816519-689ad163238b?q=80&w=600&auto=format&fit=crop"
-  ]
-
+export default function Page() {
   return (
     <AppShell>
       {/* Hero */}
@@ -118,28 +83,24 @@ export default async function Page() {
               View All
             </Link>
           </div>
-          {productGrid.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-20">
-              {productGrid.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm font-sans text-center py-20">No items available at the moment.</p>
-          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-20">
+            {productGrid.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Lifestyle pair */}
       <section className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-10 py-12">
         <Link href="/catalog" className="group relative aspect-[3/4] overflow-hidden block">
-          <Image src={lifestyleLeft} alt="The Smart Chic" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
+          <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop" alt="The Smart Chic" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
           <div className="absolute bottom-10 left-10 text-white font-serif">
             <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">The Smart Chic</h3>
           </div>
         </Link>
         <Link href="/catalog" className="group relative aspect-[3/4] overflow-hidden block">
-          <Image src={lifestyleRight} alt="Ready To Go" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
+          <Image src="https://images.unsplash.com/photo-1529139513466-42016c430756?q=80&w=1200&auto=format&fit=crop" alt="Ready To Go" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" />
           <div className="absolute bottom-10 left-10 text-white font-serif">
             <h3 className="text-2xl font-medium tracking-wide drop-shadow-md">Ready To Go</h3>
           </div>
