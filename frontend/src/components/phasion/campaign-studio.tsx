@@ -1,192 +1,345 @@
 "use client"
 
 import { useState } from "react"
-import { ImagePlus, Loader2, Save, Send } from "lucide-react"
+import Image from "next/image"
+import { Loader2, Wand2, ImageOff, Send, CheckCircle2, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { ProductCard } from "./product-card"
+import { toast } from "sonner"
 
-// Mock products for the selector
-const PRODUCTS = [
-  {
-    id: "ps-1",
-    name: "Classic Easy Zipper Tote",
-    price: "$298",
-    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: "ps-2",
-    name: "Concertina Phone Bag",
-    price: "$248",
-    image: "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: "ps-12",
-    name: "Wool Cashmere Sweater Coat",
-    price: "$398",
-    image: "https://images.unsplash.com/photo-1539109132314-347752d87b40?q=80&w=800&auto=format&fit=crop",
+type Product = { id: string; name: string; price: string; image: string }
+
+type Step = "select" | "stage" | "generate" | "done"
+
+const TEAM_SLUG = "phasion-sense"
+const MERCHANT_ID = "phasion-sense"
+
+export function CampaignStudio({ products }: { products: Product[] }) {
+  const [step, setStep] = useState<Step>("select")
+
+  // Step 1 — product selection
+  const [selected, setSelected] = useState<Product | null>(null)
+
+  // Step 2 — Photoroom staging
+  const [staging, setStaging] = useState(false)
+  const [stagedUrl, setStagedUrl] = useState<string | null>(null)
+
+  // Step 3 — Predis.ai generation + publish
+  const [title, setTitle] = useState("")
+  const [copy, setCopy] = useState("")
+  const [generating, setGenerating] = useState(false)
+  const [generatedCard, setGeneratedCard] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState(false)
+  const [publishedId, setPublishedId] = useState<string | null>(null)
+
+  // ── Step 1: pick a product ────────────────────────────────────────────────
+  function pickProduct(p: Product) {
+    setSelected(p)
+    setTitle(p.name)
+    setCopy(`Shop the ${p.name} — a signature piece from Phasion Sense, crafted for the modern wardrobe.`)
+    setStagedUrl(null)
+    setGeneratedCard(null)
+    setPublishedId(null)
+    setStep("stage")
   }
-]
 
-export function CampaignStudio() {
-  const [title, setTitle] = useState("Weekend Shirt Edit")
-  const [copy, setCopy] = useState("A tight edit of easy shirts and two-piece sets from Phasion Sense.")
-  const [imageUrl, setImageUrl] = useState("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop")
-  const [selectedIds, setSelectedIds] = useState<string[]>(["ps-1", "ps-2"])
-  const [isPublishing, setIsPublishing] = useState(false)
-
-  const toggleProduct = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    )
+  // ── Step 2: Photoroom background removal ──────────────────────────────────
+  async function removeBackground() {
+    if (!selected) return
+    setStaging(true)
+    try {
+      const res = await fetch("/api/pipeline/stage", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageUrl: selected.image }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Stage failed")
+      setStagedUrl(data.stagedImageUrl)
+      toast.success("Background removed!")
+    } catch (e: any) {
+      toast.error(e.message ?? "Photoroom failed")
+    } finally {
+      setStaging(false)
+    }
   }
 
-  const handlePublish = async () => {
-    setIsPublishing(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsPublishing(false)
-    alert("Campaign published successfully!")
+  // ── Step 3: Predis.ai campaign card ───────────────────────────────────────
+  async function generateCard() {
+    if (!selected) return
+    const imageUrl = stagedUrl ?? selected.image
+    setGenerating(true)
+    try {
+      const res = await fetch("/api/pipeline/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageUrl, productName: title || selected.name, copyHint: copy }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Generate failed")
+      setGeneratedCard(data.imageUrl ?? data.postUrl ?? null)
+      setStep("generate")
+      toast.success("Campaign card generated!")
+    } catch (e: any) {
+      toast.error(e.message ?? "Predis.ai failed")
+    } finally {
+      setGenerating(false)
+    }
   }
+
+  // ── Publish campaign to hackathon API ─────────────────────────────────────
+  async function publish() {
+    if (!selected) return
+    setPublishing(true)
+    try {
+      const body = {
+        merchant_id: MERCHANT_ID,
+        title,
+        copy_text: copy,
+        featured_item_ids: [selected.id],
+        team_slug: TEAM_SLUG,
+        ...(generatedCard ? { image_urls: [generatedCard] } : stagedUrl ? { image_urls: [stagedUrl] } : {}),
+      }
+      const res = await fetch("https://api-hackathon.codedematrixtech.com/campaigns", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message ?? "Publish failed")
+      setPublishedId(data.id)
+      setStep("done")
+      toast.success(`Campaign published! ID: ${data.id}`)
+    } catch (e: any) {
+      toast.error(e.message ?? "Publish failed")
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  // ── Restart ───────────────────────────────────────────────────────────────
+  function restart() {
+    setSelected(null)
+    setStagedUrl(null)
+    setGeneratedCard(null)
+    setPublishedId(null)
+    setTitle("")
+    setCopy("")
+    setStep("select")
+  }
+
+  // ── Step indicator ────────────────────────────────────────────────────────
+  const steps = [
+    { key: "select",   label: "Select Product" },
+    { key: "stage",    label: "Remove Background" },
+    { key: "generate", label: "Generate Card" },
+    { key: "done",     label: "Published" },
+  ]
+  const stepIdx = steps.findIndex(s => s.key === step)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      {/* Editor Panel */}
-      <div className="flex flex-col gap-10">
-        <div>
-          <h2 className="text-2xl font-serif mb-6">Campaign Details</h2>
-          <div className="flex flex-col gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="title" className="text-[11px] uppercase tracking-widest font-bold">Campaign Title</Label>
-              <Input 
-                id="title" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Summer Drop"
-              />
+    <div className="space-y-12">
+      {/* Progress bar */}
+      <div className="flex items-center gap-2">
+        {steps.map((s, i) => (
+          <div key={s.key} className="flex items-center gap-2">
+            <div className={`flex items-center gap-1.5 text-[11px] uppercase tracking-widest font-bold transition-colors ${i <= stepIdx ? "text-foreground" : "text-muted-foreground/40"}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] border ${i < stepIdx ? "bg-foreground text-background border-foreground" : i === stepIdx ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/30"}`}>
+                {i < stepIdx ? "✓" : i + 1}
+              </span>
+              {s.label}
             </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="copy" className="text-[11px] uppercase tracking-widest font-bold">Campaign Copy</Label>
-              <Textarea 
-                id="copy" 
-                value={copy} 
-                onChange={(e) => setCopy(e.target.value)}
-                placeholder="Describe your campaign..."
-                rows={4}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="image" className="text-[11px] uppercase tracking-widest font-bold">Hero Image URL</Label>
-              <div className="flex gap-2">
-                <Input 
-                  id="image" 
-                  value={imageUrl} 
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-                <Button variant="secondary" size="icon">
-                  <ImagePlus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            {i < steps.length - 1 && <ChevronRight className="w-3 h-3 text-muted-foreground/30" />}
           </div>
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-serif mb-6">Featured Products</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {PRODUCTS.map((product) => (
-              <div 
-                key={product.id}
-                onClick={() => toggleProduct(product.id)}
-                className={`cursor-pointer border-2 transition-all p-2 ${
-                  selectedIds.includes(product.id) ? "border-foreground" : "border-transparent opacity-60 grayscale"
-                }`}
-              >
-                <div className="aspect-square relative mb-2">
-                  <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
-                </div>
-                <p className="text-[10px] font-medium truncate">{product.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex gap-4 pt-4 border-t border-border">
-          <Button variant="outline" className="flex-grow gap-2">
-            <Save className="w-4 h-4" />
-            Save Draft
-          </Button>
-          <Button 
-            className="flex-grow gap-2" 
-            onClick={handlePublish}
-            disabled={isPublishing}
-          >
-            {isPublishing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            Publish Campaign
-          </Button>
-        </div>
+        ))}
       </div>
 
-      {/* Preview Panel */}
-      <div className="sticky top-24 bg-secondary/20 p-8 border border-border">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-[11px] uppercase tracking-widest font-bold opacity-50">Live Preview</h2>
-          <div className="flex gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-400" />
-            <div className="w-2 h-2 rounded-full bg-yellow-400" />
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-          </div>
-        </div>
-
-        <div className="bg-background shadow-2xl overflow-hidden aspect-[9/16] max-w-[320px] mx-auto border border-border/50 flex flex-col no-scrollbar overflow-y-auto">
-          {/* Mock App Header */}
-          <div className="px-4 py-4 border-b border-border flex justify-between items-center sticky top-0 bg-background z-10">
-            <span className="text-[10px] font-bold tracking-tighter">PS.</span>
-            <div className="flex gap-3">
-              <div className="w-3 h-3 bg-foreground/10 rounded-full" />
-              <div className="w-3 h-3 bg-foreground/10 rounded-full" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0 pb-12">
-            <div className="aspect-[3/4] relative bg-muted">
-              {imageUrl && <img src={imageUrl} alt="Preview Hero" className="object-cover w-full h-full" />}
-              <div className="absolute bottom-6 left-6 right-6">
-                <h3 className="text-white text-xl font-serif drop-shadow-md">{title}</h3>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <p className="text-[12px] leading-relaxed text-muted-foreground mb-8">
-                {copy}
-              </p>
-
-              <div className="grid grid-cols-2 gap-4">
-                {PRODUCTS.filter(p => selectedIds.includes(p.id)).map(product => (
-                  <div key={product.id} className="flex flex-col gap-2">
-                    <div className="aspect-[3/4] bg-muted overflow-hidden">
-                      <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-bold truncate">{product.name}</h4>
-                      <p className="text-[10px] opacity-60">{product.price}</p>
-                    </div>
+      {/* ── Step 1: Product grid ── */}
+      {step === "select" && (
+        <div>
+          <h2 className="text-lg font-bold uppercase tracking-widest mb-8 opacity-70">Choose a Product</h2>
+          {products.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No products loaded. Check your API connection.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {products.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => pickProduct(p)}
+                  className="group text-left hover:opacity-90 transition-opacity"
+                >
+                  <div className="aspect-[3/4] relative overflow-hidden bg-secondary/30 mb-3 border border-border/50 group-hover:border-foreground/30 transition-colors">
+                    {p.image ? (
+                      <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <ImageOff className="w-6 h-6 text-muted-foreground/30" />
+                      </div>
+                    )}
                   </div>
-                ))}
+                  <p className="text-xs font-bold truncate">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">{p.price}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 2 + 3: Edit panel + preview ── */}
+      {(step === "stage" || step === "generate") && selected && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+          {/* Left: controls */}
+          <div className="space-y-10">
+
+            {/* Selected product */}
+            <div>
+              <p className="text-[11px] uppercase tracking-widest font-bold opacity-40 mb-4">Selected Product</p>
+              <div className="flex items-start gap-4">
+                <div className="w-20 aspect-[3/4] relative border border-border/50 overflow-hidden shrink-0">
+                  {selected.image && <Image src={selected.image} alt={selected.name} fill className="object-cover" unoptimized />}
+                </div>
+                <div>
+                  <p className="font-bold">{selected.name}</p>
+                  <p className="text-sm text-muted-foreground">{selected.price}</p>
+                  <button onClick={restart} className="text-xs underline text-muted-foreground mt-2 hover:text-foreground">
+                    Change product
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* Photoroom */}
+            <div className="border border-border/50 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-sm">Step 1 — Photoroom</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Remove the product background with AI</p>
+                </div>
+                {stagedUrl && <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />}
+              </div>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={removeBackground}
+                disabled={staging}
+              >
+                {staging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                {staging ? "Removing background…" : stagedUrl ? "Remove Again" : "Remove Background"}
+              </Button>
+            </div>
+
+            {/* Campaign details */}
+            <div className="space-y-5">
+              <p className="text-[11px] uppercase tracking-widest font-bold opacity-40">Campaign Details</p>
+              <div className="grid gap-2">
+                <Label className="text-[11px] uppercase tracking-widest font-bold">Title</Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Weekend Drop" />
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-[11px] uppercase tracking-widest font-bold">Copy</Label>
+                <Textarea value={copy} onChange={e => setCopy(e.target.value)} rows={3} placeholder="Describe your campaign…" />
+              </div>
+            </div>
+
+            {/* Predis */}
+            <div className="border border-border/50 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-sm">Step 2 — Predis.ai</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Generate a social media campaign card</p>
+                </div>
+                {generatedCard && <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />}
+              </div>
+              <Button
+                className="w-full gap-2"
+                onClick={generateCard}
+                disabled={generating}
+              >
+                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                {generating ? "Generating…" : generatedCard ? "Regenerate Card" : "Generate Campaign Card"}
+              </Button>
+            </div>
+
+            {/* Publish */}
+            <Button
+              size="lg"
+              className="w-full gap-2"
+              onClick={publish}
+              disabled={publishing}
+            >
+              {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {publishing ? "Publishing…" : "Publish Campaign"}
+            </Button>
+          </div>
+
+          {/* Right: preview */}
+          <div className="sticky top-24 space-y-4">
+            <p className="text-[11px] uppercase tracking-widest font-bold opacity-40">Preview</p>
+
+            {/* Generated card */}
+            {generatedCard && (
+              <div className="border border-border/50 overflow-hidden">
+                <p className="text-[10px] uppercase tracking-widest font-bold opacity-40 px-4 pt-3 pb-2">Generated Campaign Card</p>
+                <div className="aspect-square relative bg-secondary/20">
+                  <Image src={generatedCard} alt="Generated campaign" fill className="object-contain" unoptimized />
+                </div>
+              </div>
+            )}
+
+            {/* Staged / original */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border border-border/50 overflow-hidden">
+                <p className="text-[10px] uppercase tracking-widest font-bold opacity-40 px-3 pt-2 pb-1">Original</p>
+                <div className="aspect-[3/4] relative bg-secondary/20">
+                  {selected.image && <Image src={selected.image} alt="Original" fill className="object-cover" unoptimized />}
+                </div>
+              </div>
+              <div className="border border-border/50 overflow-hidden">
+                <p className="text-[10px] uppercase tracking-widest font-bold opacity-40 px-3 pt-2 pb-1">
+                  {stagedUrl ? "Background Removed" : "After Photoroom"}
+                </p>
+                <div className="aspect-[3/4] relative bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)_0_0/16px_16px]">
+                  {stagedUrl ? (
+                    <Image src={stagedUrl} alt="Staged" fill className="object-contain" unoptimized />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                      Run Photoroom
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Campaign card text preview */}
+            <div className="border border-border/50 p-5 space-y-1">
+              <p className="font-bold text-sm">{title || selected.name}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{copy}</p>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Done ── */}
+      {step === "done" && (
+        <div className="max-w-lg mx-auto text-center py-24 space-y-6">
+          <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
+          <h2 className="text-2xl font-serif">Campaign Published</h2>
+          {publishedId && <p className="text-sm text-muted-foreground font-mono">ID: {publishedId}</p>}
+          <p className="text-muted-foreground text-sm">
+            Your campaign is now live and visible to your customers.
+          </p>
+          <div className="flex gap-4 justify-center pt-4">
+            <Button variant="outline" onClick={restart}>Create Another</Button>
+            <Button onClick={() => window.open(`https://api-hackathon.codedematrixtech.com/campaigns/${publishedId}`, "_blank")}>
+              View Campaign
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
