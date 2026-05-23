@@ -1,0 +1,13 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/clients/[id]/page": "/clients/[id]",
+  "/clients/page": "/clients",
+  "/icon.png/route": "/icon.png",
+  "/inbox/page": "/inbox",
+  "/page": "/",
+  "/performance/page": "/performance",
+  "/projects/[id]/backlog/page": "/projects/[id]/backlog",
+  "/projects/[id]/page": "/projects/[id]",
+  "/tasks/page": "/tasks"
+}

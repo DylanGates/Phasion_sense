@@ -1,0 +1,17 @@
+{
+  "name": "phasion-sense-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:all": "pnpm --parallel --filter frontend --filter backend dev",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "lint": "pnpm --filter frontend lint",
+    "start": "pnpm --filter frontend start",
+    "start:backend": "pnpm --filter backend start",
+    "test": "pnpm --filter backend test"
+  },
+  "packageManager": "pnpm@10.0.0"
+}
